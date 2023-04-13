@@ -20,4 +20,9 @@ find_package(Poco COMPONENTS Net REQUIRED)
 
 add_subdirectory(NymphCastPlayer)
 
+install(FILES nymphcast-client.desktop
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+install(FILES nymphcast.png
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps)
+
 feature_summary(WHAT ALL)

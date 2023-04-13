@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Nymphcast Client
+Comment=Reference client for the Nymphcast protocol
+Exec=/usr/bin/nymphcast-player
+Icon=nymphcast
+Type=Application
+Categories=AudioVideo;Audio;Video;Player;Graphics;Viewer;Network;Qt;
+Keywords=nymphcast;cast;network cast;audio;video;
