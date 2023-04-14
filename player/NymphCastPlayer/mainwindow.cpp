@@ -35,7 +35,7 @@
 
 
 
-const QVector<QString> permissions({"android.permission.INTERNET", 
+const QVector<QString> permissions({"android.permission.INTERNET",
 									"android.permission.READ_EXTERNAL_STORAGE"});
 
 class MediaItem : public QObject {
@@ -44,17 +44,17 @@ class MediaItem : public QObject {
 	Q_PROPERTY(QString album READ album CONSTANT)
 	Q_PROPERTY(QString artist READ artist CONSTANT)
 	Q_PROPERTY(QString path READ path CONSTANT)
-	
+
 	QString m_title;
 	QString m_album;
 	QString m_artist;
 	QString m_path;
-	
+
 public:
-	MediaItem(const QString title, const QString album, const QString artist, const QString path, 
-																		QObject *parent = nullptr) 
+	MediaItem(const QString title, const QString album, const QString artist, const QString path,
+																		QObject *parent = nullptr)
 		: QObject(parent), m_title(title), m_album(album), m_artist(artist), m_path(path) { }
-	
+
 	QString title() const { return m_title; }
 	QString album() const { return m_album; }
 	QString artist() const { return m_artist; }
@@ -75,7 +75,7 @@ static void* thread_func(void*) {
         buf[rdsz] = 0;  // add null-terminator
         __android_log_write(ANDROID_LOG_DEBUG, tag, buf);
     }
-    
+
     return 0;
 }
 
@@ -93,7 +93,7 @@ int start_logger(const char* app_name) {
     dup2(pfd[1], 2);
 
     /* spawn the logging thread */
-    if (pthread_create(&thr, 0, thread_func, 0) == -1) { return -1; }    
+    if (pthread_create(&thr, 0, thread_func, 0) == -1) { return -1; }
     pthread_detach(thr);
     return 0;
 }
@@ -104,7 +104,7 @@ int start_logger(const char* app_name) {
 // Static declarations
 NymphCastClient MainWindow::client;
 
-	
+
 Q_DECLARE_METATYPE(NymphPlaybackStatus);
 Q_DECLARE_METATYPE(NCRemoteInstance);
 Q_DECLARE_METATYPE(NCRemoteGroup);
@@ -112,22 +112,22 @@ Q_DECLARE_METATYPE(NCRemoteGroup);
 
 MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainWindow) {
 	ui->setupUi(this);
-	
+
 	// Register custom types.
 	qRegisterMetaType<NymphPlaybackStatus>("NymphPlaybackStatus");
 	qRegisterMetaType<NymphPlaybackStatus>("NCRemoteInstance");
 	qRegisterMetaType<NymphPlaybackStatus>("NCRemoteGroup");
 	qRegisterMetaType<uint32_t>("uint32_t");
-	
+
 	// Set application options.
 	QCoreApplication::setOrganizationName("Nyanko");
 	QCoreApplication::setApplicationName("NymphCastPlayer");
 	//QCoreApplication::setApplicationVersion("v0.1");
 	QCoreApplication::setApplicationVersion(STR(__NCVERSION));
-	
+
 	// Set location for user data.
 	appDataLocation = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-	
+
 	// Set configured or default stylesheet. Read out current value.
 	// Skip stylesheet if file isn't found.
 	QSettings settings;
@@ -138,13 +138,13 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 	settings.setValue("stylesheet", "default.css");
 #endif
 	}
-	
+
 #if defined(Q_OS_ANDROID)
 	QString sFile = settings.value("stylesheet", ":/css/dark_teal.css").toString();
 #else
 	QString sFile = settings.value("stylesheet", "default.css").toString();
 #endif
-	
+
 	if (!QFile::exists(sFile)) {
 		// Use stylesheet from resource bundle.
 		std::cout << "Using stylesheet from resources." << std::endl;
@@ -154,7 +154,7 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 		sFile = ":/css/default.css";
 #endif
 	}
-	
+
 	QFile file(sFile);
 	if (file.exists()) {
 		file.open(QIODevice::ReadOnly);
@@ -164,7 +164,7 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 	else {
 		std::cerr << "Stylesheet file " << sFile.toStdString() << " not found." << std::endl;
 	}
-	
+
 	// Set up UI connections.
 	// Menu
 	connect(ui->actionQuit, SIGNAL(triggered()), this, SLOT(quit()));
@@ -176,12 +176,12 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 	connect(ui->actionClear, SIGNAL(triggered()), this, SLOT(clearPlaylist()));
 	connect(ui->actionManageGroups, SIGNAL(triggered()), this, SLOT(openRemotesDialog()));
 	connect(ui->actionManageCustom, SIGNAL(triggered()), this, SLOT(openCustomRemotesDialog()));
-	
+
 	// UI
 	connect(ui->editRemotesButton, SIGNAL(clicked()), this, SLOT(openRemotesDialog()));
 	connect(ui->refreshRemotesButton, SIGNAL(clicked()), this, SLOT(remoteListRefresh()));
 	connect(ui->remotesComboBox, SIGNAL(activated(int)), this, SLOT(playerRemoteChanged(int)));
-	
+
 	// Tabs
     // Player tab.
 	connect(ui->addButton, SIGNAL(clicked()), this, SLOT(addFile()));
@@ -198,87 +198,87 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 	connect(ui->cycleSubtitleButton, SIGNAL(clicked()), this, SLOT(cycleSubtitles()));
 	connect(ui->cycleAudioButton, SIGNAL(clicked()), this, SLOT(cycleAudio()));
 	connect(ui->cycleVideoButton, SIGNAL(clicked()), this, SLOT(cycleVideo()));
-	
+
 	// Apps tab.
 	connect(ui->updateRemoteAppsButton, SIGNAL(clicked()), this, SLOT(appsListRefresh()));
 	connect(ui->remoteAppLineEdit, SIGNAL(returnPressed()), this, SLOT(sendCommand()));
-    
+
     // Apps (GUI) tab.
     connect(ui->appTabGuiHomeButton, SIGNAL(clicked()), this, SLOT(appsHome()));
     connect(ui->appTabGuiTextBrowser, SIGNAL(linkClicked(QUrl)), this, SLOT(anchorClicked(QUrl)));
-    
-    using namespace std::placeholders; 
+
+    using namespace std::placeholders;
     ui->appTabGuiTextBrowser->setResourceHandler(std::bind(&MainWindow::loadResource, this, _1));
-    
+
     // Shares tab.
     connect(ui->sharesScanButton, SIGNAL(clicked()), this, SLOT(scanForShares()));
     connect(ui->sharesPlayButton, SIGNAL(clicked()), this, SLOT(playSelectedShare()));
-	
+
 	// General NC library.
-	connect(this, SIGNAL(playbackStatusChange(uint32_t, NymphPlaybackStatus)), 
+	connect(this, SIGNAL(playbackStatusChange(uint32_t, NymphPlaybackStatus)),
 			this, SLOT(setPlaying(uint32_t, NymphPlaybackStatus)));
-			
+
 	// Timers.
 	connect(&posTimer, SIGNAL(timeout()), this, SLOT(positionUpdate()));
-			
+
 	// Set up playback controls.
 	ui->pauseToolButton->setVisible(false);
 	ui->beginToolButton->setVisible(false);
 	ui->stopToolButton->setEnabled(false);
 	ui->endToolButton->setVisible(false);
-	
+
 	// NymphCast client SDK callbacks.
 	using namespace std::placeholders;
 	client.setStatusUpdateCallback(std::bind(&MainWindow::statusUpdateCallback,	this, _1, _2));
-    
+
     // Set values.
     ui->sharesTreeView->setModel(&sharesModel);
-	
+
 	// Set QScroller on the list view and similar that need touch-based scrolling support.
 	QScroller::grabGesture(ui->mediaListWidget, QScroller::LeftMouseButtonGesture);
 	QScroller::grabGesture(ui->sharesTreeView, QScroller::LeftMouseButtonGesture);
-	
+
 	// Ensure this path exists.
 	QDir dir(appDataLocation);
 	if (!dir.exists()) {
 		dir.mkpath(".");
 	}
-	
+
 #if defined(Q_OS_ANDROID)
 	// Set the 'Android' Qt style.
 	// FIXME: looks pretty horrid during testing. Disabling for now.
 	//QApplication::setStyle(QStyleFactory::create("Android"));
-	
+
 	// Ensure we got all permissions.
 	for (const QString &permission : permissions){
         QtAndroid::PermissionResult result = QtAndroid::checkPermission(permission);
         if (result == QtAndroid::PermissionResult::Denied) {
-            QtAndroid::PermissionResultMap resultHash = 
+            QtAndroid::PermissionResultMap resultHash =
 									QtAndroid::requestPermissionsSync(QStringList({permission}));
             if (resultHash[permission] == QtAndroid::PermissionResult::Denied) {
                 return;
 			}
         }
     }
-	
+
     // We need to redirect stdout/stderr. This requires starting a new thread here.
     start_logger(tag);
-    
+
 	// On Android platforms we read in the media files into the playlist as they are in standard
-	// locations. This is also a work-around for QTBUG-83372: 
+	// locations. This is also a work-around for QTBUG-83372:
 	// https://bugreports.qt.io/browse/QTBUG-83372
-	
+
 	// First, disable the 'add' and 'remove' buttons as these won't be used on Android.
 	ui->addButton->setEnabled(false);
     ui->addButton->setVisible(false);
 	ui->removeButton->setEnabled(false);
     ui->removeButton->setVisible(false);
-	
+
 	if(!QAndroidJniObject::isClassAvailable("com/nyanko/nymphcastplayer/NymphCast")) {
 		qDebug() << "Java class is missing.";
 		return;
 	}
-	
+
 	// Next, read the local media files and add them to the list, sorting music and videos.
 	//QStringList audio = QStandardPaths::locateAll(QStandardPaths::MusicLocation, QString());
 	//QStringList video = QStandardPaths::locateAll(QStandardPaths::MoviesLocation, QString());
@@ -287,7 +287,7 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 							"loadAudio",
 							"(Landroid/content/Context;)Ljava/util/ArrayList;",
 							QtAndroid::androidContext().object());
-		
+
 	for (int i = 0; i < audioObj.callMethod<jint>("size"); ++i) {
 		// Add item to the list.
 		QAndroidJniObject track = audioObj.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
@@ -299,17 +299,17 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 		newItem->setText(artist + " - " + title);
 		newItem->setData(Qt::UserRole, QVariant(path));
 		ui->mediaListWidget->addItem(newItem);
-		
+
 		// Debug
 		std::cout << path.toStdString() << std::endl;
 	}
-	
+
 	QAndroidJniObject videoObj = QAndroidJniObject::callStaticObjectMethod(
                             "com/nyanko/nymphcastplayer/NymphCast",
 							"loadVideo",
 							"(Landroid/content/Context;)Ljava/util/ArrayList;",
 							QtAndroid::androidContext().object());
-		
+
 	for (int i = 0; i < videoObj.callMethod<jint>("size"); ++i) {
 		// Add item to the list.
 		QAndroidJniObject track = videoObj.callObjectMethod("get", "(I)Ljava/lang/Object;", i);
@@ -321,7 +321,7 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 		newItem->setText(artist + " - " + title);
 		newItem->setData(Qt::UserRole, QVariant(path));
 		ui->mediaListWidget->addItem(newItem);
-		
+
 		// Debug
 		std::cout << path.toStdString() << std::endl;
 	}
@@ -348,20 +348,20 @@ MainWindow::MainWindow(QWidget *parent) :	 QMainWindow(parent), ui(new Ui::MainW
 			newItem->setData(Qt::UserRole, QVariant(line));
 			ui->mediaListWidget->addItem(newItem);
 		}
-		
+
 		playlist.close();
 	}
 #endif
 	// Load any custom remotes.
 	loadRemotes();
-	
+
 	// Load any saved groups.
 	loadGroups();
-	
+
 	// Obtain initial list of available remotes.
 	// This also updates the combolist with groups and custom remotes.
 	remoteListRefresh();
-	
+
 	// Restore UI preferences.
 	ui->singlePlayCheckBox->setChecked(settings.value("ui/singlePlayCheckBox", true).toBool());
 	ui->repeatQueueCheckBox->setChecked(settings.value("ui/repeatQueueCheckBox", false).toBool());
@@ -371,7 +371,7 @@ MainWindow::~MainWindow() {
 	QSettings settings;
 	settings.setValue("ui/singlePlayCheckBox", ui->singlePlayCheckBox->isChecked());
 	settings.value("ui/repeatQueueCheckBox", ui->repeatQueueCheckBox->isChecked());
-	
+
 	delete ui;
 }
 
@@ -381,60 +381,60 @@ MainWindow::~MainWindow() {
 // Updates the playback position of the current file if needed (not updated externally).
 void MainWindow::positionUpdate() {
 	//if (!playingTrack) { return; }
-	
+
 	// DEBUG
 	//std::cout << "Position Update..." << std::endl;
-	
+
 	// Obtain the info on the currently active remote.
 	// Obtain selected ID.
 	int index = ui->remotesComboBox->currentIndex();
 	uint32_t id = ui->remotesComboBox->currentData().toUInt();
-	
+
 	NCRemoteInstance* ris = 0;
 	if (index > separatorIndex) {
 		NCRemoteGroup& group = groups[id];
 		if (group.remotes.size() < 1) { return; }
-		
+
 		ris = &(group.remotes[0]);
 	}
 	else if (index < separatorIndex) {
 		ris = &(remotes[index]);
 	}
-	
+
 	// DEBUG
 	//std::cout << "Position Update: Check pause..." << std::endl;
-	
+
 	// Check whether we're paused.
 	if (ris->status.status == NYMPH_PLAYBACK_STATUS_PAUSED) {
 		return;
 	}
-	
+
 	// DEBUG
 	//std::cout << "Position Update: Check time..." << std::endl;
-	
+
 	QTime now = QTime::currentTime();
 	if (ris->timestamp.secsTo(now) < 1) {
 		// No need to update.
 		return;
 	}
-	
+
 	// Increase position by 1 second.
 	ris->position += 1;
-	
+
 	// Update timestamp.
 	ris->timestamp = now;
-	
+
 	//
 	//std::cout << "positionUpdate: position: " << ris->position << ", duration: " << ris->duration << std::endl;
-	
+
 	// Set position & duration in UI.
 	QTime position(0, 0);
 	position = position.addSecs((int64_t) ris->position);
 	QTime duration(0, 0);
 	duration = duration.addSecs(ris->status.duration);
-	ui->durationLabel->setText(position.toString("hh:mm:ss") + " / " + 
+	ui->durationLabel->setText(position.toString("hh:mm:ss") + " / " +
 													duration.toString("hh:mm:ss"));
-													
+
 	ui->positionSlider->setValue((ris->position / ris->status.duration) * 1000);
 }
 
@@ -448,20 +448,20 @@ void MainWindow::statusUpdateCallback(uint32_t handle, NymphPlaybackStatus statu
 
 // --- SET PLAYING ---
 void MainWindow::setPlaying(uint32_t handle, NymphPlaybackStatus status) {
-	// Check that the current remote (handle) is selected in the combobox. 
+	// Check that the current remote (handle) is selected in the combobox.
 	// If not, just store the updated status.
-	
+
 	// Obtain selected ID.
 	int index = ui->remotesComboBox->currentIndex();
 	uint32_t id = ui->remotesComboBox->currentData().toUInt();
-	
+
 	NCRemoteInstance* ris = 0;
 	if (index > separatorIndex) {
 		NCRemoteGroup& group = groups[ui->remotesComboBox->currentData().toUInt()];
 		if (group.remotes.size() < 1) { return; }
-		
+
 		ris = &(group.remotes[0]);
-		
+
 		group.remotes[0].status = status;
 		if (groups[id].remotes[0].handle != handle) {
 			return;
@@ -472,17 +472,17 @@ void MainWindow::setPlaying(uint32_t handle, NymphPlaybackStatus status) {
 		if (remotes[index].handle != handle) {
 			return;
 		}
-		
+
 		ris = &(remotes[index]);
 	}
 	else {
 		return;
 	}
-	
+
 	updatePlayerUI(status, ris);
 }
-	
-	
+
+
 // --- UPDATE PLAYER UI ---
 void MainWindow::updatePlayerUI(NymphPlaybackStatus status, NCRemoteInstance* ris) {
 	// Update the UI.
@@ -511,44 +511,44 @@ void MainWindow::updatePlayerUI(NymphPlaybackStatus status, NCRemoteInstance* ri
 		muted = true;
 		ui->soundToolButton->setIcon(QIcon(":/icons/icons/mute.png"));
 	}
-	
+
 	if (ris->init && status.playing) {
 		// If this is the initial connect, but the remote is already playing, treat init
 		// as already done, as we want to update the UI to reflect the remote status.
 		ris->init = false;
 	}
-	
+
 	if (ris->init) {
 		// Initial callback for this remote on connect. Just set safe defaults.
 		std::cout << "Initial remote status callback on connect." << std::endl;
-		
+
 		ris->init = false;
-		
+
 		playingTrack = false;
 		if (posTimer.isActive()) {
 			// Stop timer.
 			posTimer.stop();
 		}
-		
+
 		ui->playToolButton->setEnabled(true);
 		ui->playToolButton->setVisible(true);
 		ui->stopToolButton->setEnabled(false);
 		ui->pauseToolButton->setEnabled(false);
 		ui->pauseToolButton->setVisible(false);
-		
+
 		ui->menuCast->setEnabled(true);
 		ui->sharesPlayButton->setEnabled(true);
-		
+
 		ui->durationLabel->setText("0:00 / 0:00");
 		ui->positionSlider->setValue(0);
-		
+
 		ui->volumeSlider->setValue(status.volume);
 		ui->subtitlesCheckBox->setCheckState((status.subtitles_off) ? Qt::Unchecked : Qt::Checked);
-			
+
 	}
 	else if (paused) {
 		std::cout << "Paused playback..." << std::endl;
-		
+
 		// Remote player is paused. Resume using play button.
 		ui->playToolButton->setEnabled(true);
 		ui->playToolButton->setVisible(true);
@@ -558,64 +558,64 @@ void MainWindow::updatePlayerUI(NymphPlaybackStatus status, NCRemoteInstance* ri
 	}
 	else if (status.playing) {
         std::cout << "Status: Set playing..." << std::endl;
-		
+
 		// DEBUG
 		//std::cout << "updatePlayerUI: playing, duration: " << status.duration << ", position: " << status.position << std::endl;
-		
+
 		// Update recorded position, along with the timestamp.
 		ris->position = status.position;
 		ris->duration = status.duration;
 		ris->timestamp = QTime::currentTime();
-		
+
 		// Start timer if it hasn't been started already.
 		if (!posTimer.isActive()) {
 			posTimer.start(1000);
 		}
-		
+
 		// Remote player is active. Read out 'status.status' to get the full status.
 		ui->playToolButton->setEnabled(false);
 		ui->playToolButton->setVisible(false);
 		ui->stopToolButton->setEnabled(true);
 		ui->pauseToolButton->setEnabled(true);
 		ui->pauseToolButton->setVisible(true);
-		
+
 		ui->menuCast->setEnabled(false);
 		ui->sharesPlayButton->setEnabled(false);
-		
+
 		// Set position & duration.
 		QTime position(0, 0);
 		position = position.addSecs((int64_t) status.position);
 		QTime duration(0, 0);
 		duration = duration.addSecs(status.duration);
-		ui->durationLabel->setText(position.toString("hh:mm:ss") + " / " + 
+		ui->durationLabel->setText(position.toString("hh:mm:ss") + " / " +
 														duration.toString("hh:mm:ss"));
-														
+
 		ui->positionSlider->setValue((status.position / status.duration) * 1000);
-		
+
 		ui->volumeSlider->setValue(status.volume);
 		ui->subtitlesCheckBox->setCheckState((status.subtitles_off) ? Qt::Unchecked : Qt::Checked);
 	}
 	else {
         std::cout << "Status: Set not playing..." << std::endl;
-		
+
 		// Remote player is not active.
 		ui->playToolButton->setEnabled(true);
 		ui->playToolButton->setVisible(true);
 		ui->stopToolButton->setEnabled(false);
 		ui->pauseToolButton->setEnabled(false);
 		ui->pauseToolButton->setVisible(false);
-		
+
 		ui->menuCast->setEnabled(true);
 		ui->sharesPlayButton->setEnabled(true);
-		
+
 		if (posTimer.isActive()) { posTimer.stop(); }
-		
+
 		ui->durationLabel->setText("0:00 / 0:00");
 		ui->positionSlider->setValue(0);
-		
+
 		ui->volumeSlider->setValue(status.volume);
 		ui->subtitlesCheckBox->setCheckState((status.subtitles_off) ? Qt::Unchecked : Qt::Checked);
-		
+
 		if (singleCast) {
 			singleCast = false;
 			playingTrack = false;
@@ -635,13 +635,13 @@ void MainWindow::updatePlayerUI(NymphPlaybackStatus status, NCRemoteInstance* ri
 						std::cout << "Repeat Queue checkbox is false. End playback." << std::endl;
 						return;
 					}
-					
+
                     // Restart at top.
                     crow = 0;
                 }
-                
+
                 std::cout << "Status: Start playing track index " << crow << "..." << std::endl;
-                
+
                 ui->mediaListWidget->setCurrentRow(crow);
                 play();
             }
@@ -658,16 +658,16 @@ void MainWindow::updatePlayerUI(NymphPlaybackStatus status, NCRemoteInstance* ri
 // --- CONNECT REMOTE ---
 bool MainWindow::connectRemote(NCRemoteInstance &instance) {
 	if (instance.connected) { return true; }
-	
+
 	// Connect to NymphRPC server, standard port.
 	if (!client.connectServer(instance.remote.ipv4, instance.remote.port, instance.handle)) {
 		QMessageBox::warning(this, tr("Failed to connect"), tr("The selected server could not be connected to."));
 		return false;
 	}
-	
+
 	// Successful connect.
 	instance.connected = true;
-	
+
 	return true;
 }
 
@@ -675,11 +675,11 @@ bool MainWindow::connectRemote(NCRemoteInstance &instance) {
 // --- DISCONNECT REMOTE ---
 bool MainWindow::disconnectRemote(NCRemoteInstance &instance) {
 	if (!instance.connected) { return true; }
-	
+
 	client.disconnectServer(instance.handle);
-	
+
 	instance.connected = false;
-	
+
 	return true;
 }
 
@@ -689,59 +689,59 @@ bool MainWindow::disconnectRemote(NCRemoteInstance &instance) {
 void MainWindow::remoteListRefresh() {
 	// Get the current list.
 	std::vector<NymphCastRemote> list = client.findServers();
-	
+
 	// Update the list with any changed items.
 	// First clear the remotes list, then set the non-selectable default items.
 	remotes.clear();
 	ui->remotesComboBox->clear();
-	
+
 	// Set the default, non-selectable item.
 	/* QListWidgetItem *defaultItem = new QListWidgetItem;
 	defaultItem->setText("-- Select Remote ---");
 	defaultItem->setData(Qt::UserRole, QVariant(i)); */
 	//ui->remotesComboBox->insertItem(i, "-- Select Remote ---", QVariant(i));
-	
+
 	// Add auto-discovered remotes.
 	uint32_t idx = 0;
 	for (uint32_t i = 0; i < list.size(); ++i) {
 		/* QListWidgetItem *newItem = new QListWidgetItem;
 		newItem->setText(QString::fromStdString(list[i].ipv4 + " (" + list[i].name + ")"));
 		newItem->setData(Qt::UserRole, QVariant(i)); */
-		ui->remotesComboBox->insertItem(i, QString::fromStdString(list[i].ipv4 + 
+		ui->remotesComboBox->insertItem(i, QString::fromStdString(list[i].ipv4 +
 													" (" + list[i].name + ")"), QVariant(i));
-													
+
 		// Add remote to 'remotes' list.
 		NCRemoteInstance nci;
 		nci.remote = list[i];
 		remotes.push_back(nci);
 		idx++;
 	}
-	
+
 	// Merge in custom remotes, if any.
 	for (uint32_t i = 0; i < custom_remotes.size(); ++i) {
 		/* QListWidgetItem *newItem = new QListWidgetItem;
 		newItem->setText(QString::fromStdString(custom_remotes[i].remote.ipv4 + " (" + custom_remotes[i].remote.name + ")"));
 		newItem->setData(Qt::UserRole, QVariant((i + ++idx))); */
-		ui->remotesComboBox->insertItem((i + idx), QString::fromStdString(custom_remotes[i].remote.ipv4 + 
+		ui->remotesComboBox->insertItem((i + idx), QString::fromStdString(custom_remotes[i].remote.ipv4 +
 													" (" + custom_remotes[i].remote.name + ") [Manual]"), QVariant(i));
-													
+
 		// Add remote to 'remotes' list.
 		NCRemoteInstance nci;
 		nci.manual = true;
 		nci.remote = custom_remotes[i].remote;
 		remotes.push_back(nci);
 	}
-	
+
 	// Insert group separator for the relevant combo boxes.
 	ui->remotesComboBox->insertSeparator(remotes.size());
 	separatorIndex = remotes.size();
-	
+
 	// Add groups.
 	for (uint32_t i = 0; i < groups.size(); ++i) {
-		ui->remotesComboBox->addItem(QString::fromStdString(groups[i].name + 
+		ui->remotesComboBox->addItem(QString::fromStdString(groups[i].name +
 													" (group)"), QVariant(i));
 	}
-	
+
 	// Set none selected.
 	ui->remotesComboBox->setCurrentIndex(-1);
 }
@@ -751,11 +751,11 @@ void MainWindow::remoteListRefresh() {
 void MainWindow::castFile() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	// Open file.
 	QString filename = QFileDialog::getOpenFileName(this, tr("Open media file"));
 	if (filename.isEmpty()) { return; }
-	
+
 	if (client.castFile(handle, filename.toStdString())) {
 		// Playing back file now. Update status.
 		playingTrack = true;
@@ -771,11 +771,11 @@ void MainWindow::castFile() {
 void MainWindow::castUrl() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	// Get URL.
 	QString url = QInputDialog::getText(this, tr("Cast URL"), tr("Copy in the URL to cast."));
 	if (url.isEmpty()) { return; }
-	
+
 	std::string surl = url.toStdString();
 	if (client.castUrl(handle, surl)) {
 		// Playing back URL now. Update status.
@@ -796,15 +796,15 @@ void MainWindow::playerRemoteChanged(int index) {
 	else if (remotes.empty()) {
 		return; // Nothing to change to.
 	}
-	
+
 	// Obtain selected ID.
 	uint32_t id = ui->remotesComboBox->currentData().toUInt();
-	
+
 	// Make sure remote is connected and update the status display.
 	if (index > separatorIndex) {
 		NCRemoteGroup& group = groups[id];
 		if (group.remotes.size() < 1) { return; }
-		
+
 		if (!group.remotes[0].connected) {
 			remoteIsConnected();
 		}
@@ -814,7 +814,7 @@ void MainWindow::playerRemoteChanged(int index) {
 			if (!stat.error) {
 				group.remotes[0].status = stat;
 			}
-			
+
 			updatePlayerUI(group.remotes[0].status, &(group.remotes[0]));
 		}
 	}
@@ -828,7 +828,7 @@ void MainWindow::playerRemoteChanged(int index) {
 			if (!stat.error) {
 				remotes[index].status = stat;
 			}
-			
+
 			updatePlayerUI(remotes[index].status, &(remotes[index]));
 		}
 	}
@@ -843,38 +843,38 @@ void MainWindow::addFile() {
 	QString dir = settings.value("openFileDir").toString();
 	QStringList filenames = QFileDialog::getOpenFileNames(this, tr("Open media files"), dir);
 	if (filenames.isEmpty()) { return; }
-	
+
 	// Update current folder.
 	settings.setValue("openFileDir", filenames[0]);
-	
-	
+
+
 	// Store path of added file to reload on restart. Append to file.
 	QFile playlist;
 	playlist.setFileName(appDataLocation + "/filepaths.conf");
 	playlist.open(QIODevice::WriteOnly | QIODevice::Append);
-	
+
 	// Handle each file.
 	QTextStream textStream(&playlist);
 	textStream.setCodec("UTF-8");
 	for (int i = 0; i < filenames.size(); ++i) {
 		// Check file.
 		QFileInfo finf(filenames[i]);
-		if (!finf.isFile()) { 
-			QMessageBox::warning(this, tr("Failed to open file"), 
+		if (!finf.isFile()) {
+			QMessageBox::warning(this, tr("Failed to open file"),
 					tr("%1 could not be opened.").arg(finf.fileName()));
 			return;
 		}
-		
+
 		// Add to UI.
 		QListWidgetItem *newItem = new QListWidgetItem;
 		newItem->setText(finf.fileName());
 		newItem->setData(Qt::UserRole, QVariant(filenames[i]));
 		ui->mediaListWidget->addItem(newItem);
-	
+
 		// Add to internal playlist.
 		textStream << filenames[i] << "\n";
 	}
-	
+
 	playlist.close();
 }
 
@@ -885,13 +885,13 @@ void MainWindow::removeFile() {
 	QListWidgetItem* item = ui->mediaListWidget->currentItem();
 	ui->mediaListWidget->removeItemWidget(item);
 	delete item;
-	
+
 	// TODO: Remove stored file path.
 	// FIXME: Clear and rewrite the file contents for now.
 	QFile playlist;
 	playlist.setFileName(appDataLocation + "/filepaths.conf");
 	playlist.open(QIODevice::ReadWrite | QIODevice::Truncate);
-	
+
 	int size = ui->mediaListWidget->count();
 	QTextStream textStream(&playlist);
 	textStream.setCodec("UTF-8");
@@ -900,7 +900,7 @@ void MainWindow::removeFile() {
 		QString filename = item->data(Qt::UserRole).toString();
 		textStream << filename << "\n";
 	}
-	
+
 	playlist.close();
 }
 
@@ -909,7 +909,7 @@ void MainWindow::removeFile() {
 // Return true if the currently selected remote in the Player tab is connected.
 bool MainWindow::remoteIsConnected() {
 	if (ui->remotesComboBox->count() == 0) {
-		QMessageBox::warning(this, tr("No remotes available"), 
+		QMessageBox::warning(this, tr("No remotes available"),
 						tr("Please check that receivers are available and refresh the list."));
 		return false;
 	}
@@ -917,20 +917,20 @@ bool MainWindow::remoteIsConnected() {
 		QMessageBox::warning(this, tr("No remote selected"), tr("Please select a target receiver."));
 		return false;
 	}
-	
+
 	// Obtain selected ID.
 	int index = ui->remotesComboBox->currentIndex();
-	
+
 	// Check that a remote and not a group has been selected.
 	if (index >= separatorIndex) {
 		return false;
 	}
-	
+
 	// Ensure the remote is connected.
 	if (!remotes[index].connected) {
 		if (!connectRemote(remotes[index])) { return false; }
 	}
-	
+
 	return true;
 }
 
@@ -945,7 +945,7 @@ void MainWindow::play() {
 		QMessageBox::warning(this, tr("No remotes found"), tr("Please refresh and try again."));
 		return;
 	}
-	
+
 	// Get currently selected remote or group, connect if necessary.
 	if (ui->remotesComboBox->count() == 0) {
 		QMessageBox::warning(this, tr("No remotes found"), tr("Please refresh and try again."));
@@ -955,10 +955,10 @@ void MainWindow::play() {
 		QMessageBox::warning(this, tr("No remote selected"), tr("Please select a target receiver."));
 		return;
 	}
-	
+
 	// Obtain selected ID.
 	int index = ui->remotesComboBox->currentIndex();
-	
+
 	// If a group is selected, pick the first remote in the group as master.
 	if (index > separatorIndex) {
 		// Get the group and set up the master & any slave receivers.
@@ -968,15 +968,15 @@ void MainWindow::play() {
 			QMessageBox::warning(this, tr("No remotes"), tr("Group contains no remotes."));
 			return;
 		}
-		
+
 		if (!group.remotes[0].connected) {
 			if (!connectRemote(group.remotes[0])) {
 				QMessageBox::warning(this, tr("Connect fail."), tr("Unable to connect to group."));
 				return;
 			}
 		}
-		
-		// Start playing the currently selected track if it isn't already playing. 
+
+		// Start playing the currently selected track if it isn't already playing.
 		// Else pause or unpause playback.
 		if (playingTrack || group.remotes[0].paused) {
 			//client.playbackStart(group.remotes[0].handle);
@@ -986,7 +986,7 @@ void MainWindow::play() {
 			QListWidgetItem* item = ui->mediaListWidget->currentItem();
 			if (item == 0) {
 				// If files are loaded in the playlist, start playing from the top, and set the
-				// track as selected. 
+				// track as selected.
 				if (ui->mediaListWidget->count() > 0) {
 					ui->mediaListWidget->setCurrentRow(0);
 					item = ui->mediaListWidget->currentItem();
@@ -996,37 +996,37 @@ void MainWindow::play() {
 					return;
 				}
 			}
-			
+
 			QString filename = item->data(Qt::UserRole).toString();
-			
+
 			// Add the slave receivers.
 			if (group.remotes.size() > 1) {
 				std::vector<NymphCastRemote> slaves;
 				for (uint32_t i = 1; i < (uint32_t) group.remotes.size(); ++i) {
 					slaves.push_back(group.remotes[i].remote);
 				}
-				
+
 				if (!client.addSlaves(group.remotes[0].handle, slaves)) {
 					QMessageBox::warning(this, tr("Failed to add slaves"), tr("Please check that all remotes in the group are online."));
 					return;
 				}
 			}
-			
+
 			if (client.castFile(group.remotes[0].handle, filename.toStdString())) {
 				// Playing back file now. Update status.
 			   playingTrack = true;
 			}
 		}
-		
+
 		return;
 	}
-	
+
 	// Ensure the remote is connected.
 	if (!remotes[index].connected) {
 		if (!connectRemote(remotes[index])) { return; }
 	}
-	
-	// Start playing the currently selected track if it isn't already playing. 
+
+	// Start playing the currently selected track if it isn't already playing.
 	// Else pause or unpause playback.
 	if (playingTrack || remotes[index].paused) {
 		//client.playbackStart(remotes[index].handle);
@@ -1034,9 +1034,9 @@ void MainWindow::play() {
 	}
 	else {
 		QListWidgetItem* item = ui->mediaListWidget->currentItem();
-		if (item == 0) { 
+		if (item == 0) {
 			// If files are loaded in the playlist, start playing from the top, and set the
-			// track as selected. 
+			// track as selected.
 			if (ui->mediaListWidget->count() > 0) {
 				ui->mediaListWidget->setCurrentRow(0);
 				item = ui->mediaListWidget->currentItem();
@@ -1046,31 +1046,31 @@ void MainWindow::play() {
 				return;
 			}
 		}
-		
+
 		QString filename = item->data(Qt::UserRole).toString();
-		
+
         if (client.castFile(remotes[index].handle, filename.toStdString())) {
             // Playing back file now. Update status.
            playingTrack = true;
         }
 		else {
 			// Playback failed.
-			QMessageBox::warning(this, tr("Playback failed"), 
+			QMessageBox::warning(this, tr("Playback failed"),
 				tr("Couldn't play back file. Check that it is a valid file and try again."));
 				return;
 		}
 	}
-	
+
 }
 
 
 // --- STOP ---
 void MainWindow::stop() {
 	//if (!playingTrack) { return; }
-	
+
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-    
+
     playingTrack = false;
 	client.playbackStop(handle);
 }
@@ -1079,10 +1079,10 @@ void MainWindow::stop() {
 // --- PAUSE ---
 void MainWindow::pause() {
 	//if (!playingTrack) { return; }
-	
+
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	client.playbackPause(handle);
 }
 
@@ -1091,7 +1091,7 @@ void MainWindow::pause() {
 void MainWindow::forward() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	client.playbackForward(handle);
 }
 
@@ -1100,7 +1100,7 @@ void MainWindow::forward() {
 void MainWindow::rewind() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	client.playbackRewind(handle);
 }
 
@@ -1109,9 +1109,9 @@ void MainWindow::rewind() {
 void MainWindow::seek() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	uint8_t value = (ui->positionSlider->value() / 10);
-	
+
 	// Seek bar is in percentages.
 	uint8_t res = client.playbackSeek(handle, NYMPH_SEEK_TYPE_PERCENTAGE, value);
 	if (res == 0) { // Success
@@ -1128,7 +1128,7 @@ void MainWindow::seek() {
 void MainWindow::mute() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	if (!muted) {
 		//client.volumeSet(handle, 0);
 		client.volumeMute(handle);
@@ -1148,9 +1148,9 @@ void MainWindow::mute() {
 void MainWindow::adjustVolume(int value) {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	if (value < 0 || value > 128) { return; }
-	
+
 	client.volumeSet(handle, value);
 }
 
@@ -1159,9 +1159,9 @@ void MainWindow::adjustVolume(int value) {
 void MainWindow::toggleSubtitles(int state) {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	bool stat = (state == Qt::Checked) ? true : false;
-	
+
 	client.enableSubtitles(handle, stat);
 }
 
@@ -1170,7 +1170,7 @@ void MainWindow::toggleSubtitles(int state) {
 void MainWindow::cycleSubtitles() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	client.cycleSubtitles(handle);
 }
 
@@ -1179,7 +1179,7 @@ void MainWindow::cycleSubtitles() {
 void MainWindow::cycleAudio() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	client.cycleAudio(handle);
 }
 
@@ -1188,7 +1188,7 @@ void MainWindow::cycleAudio() {
 void MainWindow::cycleVideo() {
 	uint32_t handle;
 	if (!remoteEnsureConnected(handle)) { return; }
-	
+
 	client.cycleVideo(handle);
 }
 
@@ -1200,7 +1200,7 @@ bool MainWindow::remoteEnsureConnected(uint32_t &handle) {
 		QMessageBox::warning(this, tr("No remotes found"), tr("Please refresh and try again."));
 		return false;
 	}
-	
+
 	if (ui->remotesComboBox->count() == 0) {
 		QMessageBox::warning(this, tr("No remote selected"), tr("Please select a target receiver."));
 		return false;
@@ -1209,17 +1209,17 @@ bool MainWindow::remoteEnsureConnected(uint32_t &handle) {
 		QMessageBox::warning(this, tr("No remote selected"), tr("Please select a target receiver."));
 		return false;
 	}
-	
+
 	// Obtain selected ID.
 	int32_t index = ui->remotesComboBox->currentIndex();
 	uint32_t id = ui->remotesComboBox->currentData().toUInt();
-	
+
 	if (index > separatorIndex) {
 		NCRemoteGroup& group = groups[id];
 		if (!group.remotes[0].connected) {
 			if (!connectRemote(group.remotes[0])) { return false; }
 		}
-		
+
 		handle = group.remotes[0].handle;
 	}
 	else {
@@ -1227,10 +1227,10 @@ bool MainWindow::remoteEnsureConnected(uint32_t &handle) {
 		if (!remotes[id].connected) {
 			if (!connectRemote(remotes[id])) { return false; }
 		}
-		
+
 		handle = remotes[id].handle;
 	}
-	
+
 	return true;
 }
 
@@ -1239,10 +1239,10 @@ bool MainWindow::remoteEnsureConnected(uint32_t &handle) {
 void MainWindow::appsListRefresh() {
 	uint32_t ncid;
 	if (!remoteEnsureConnected(ncid)) { return; }
-	
+
 	// Get list of apps from the remote server.
 	std::string appList = client.getApplicationList(remotes[ncid].handle);
-	
+
 	// Update local list.
 	ui->remoteAppsComboBox->clear();
 	QStringList appItems = (QString::fromStdString(appList)).split("\n", QString::SkipEmptyParts);
@@ -1254,23 +1254,23 @@ void MainWindow::appsListRefresh() {
 void MainWindow::sendCommand() {
 	uint32_t ncid;
 	if (!remoteEnsureConnected(ncid)) { return; }
-	
+
 	// Read the data in the line edit and send it to the remote app.
 	// Get the appID from the currently selected item in the app list combobox.
 	QString currentItem = ui->remoteAppsComboBox->currentText();
-	
+
 	std::string appId = currentItem.toStdString();
 	std::string message = ui->remoteAppLineEdit->text().toStdString();
-	
+
 	// Append the command to the output field.
 	ui->remoteAppTextEdit->appendPlainText(ui->remoteAppLineEdit->text());
 	ui->remoteAppTextEdit->appendPlainText("\n");
-	
+
 	// Clear the input field.
 	ui->remoteAppLineEdit->clear();
-	
+
 	std::string response = client.sendApplicationMessage(remotes[ncid].handle, appId, message);
-	
+
 	// Append the response to the output field.
 	ui->remoteAppTextEdit->appendPlainText(QString::fromStdString(response));
 	ui->remoteAppTextEdit->appendPlainText("\n");
@@ -1281,14 +1281,14 @@ void MainWindow::sendCommand() {
 void MainWindow::appsHome() {
 	uint32_t ncid;
     if (!remoteEnsureConnected(ncid)) { return; }
-    
+
     // Request the starting Apps page from the remote.
 	std::string home = std::string();
 	std::string resource = "apps.html";
-    QString page = QString::fromStdString(client.loadResource(remotes[ncid].handle, home, 
+    QString page = QString::fromStdString(client.loadResource(remotes[ncid].handle, home,
                                                                                resource));
-    
-    
+
+
     // Set the received HTML into the target widget.
     ui->appTabGuiTextBrowser->setHtml(page);
 }
@@ -1298,32 +1298,32 @@ void MainWindow::appsHome() {
 void MainWindow::anchorClicked(const QUrl &link) {
 	// Debug
 	std::cout << "anchorClicked: " << link.path().toStdString() << std::endl;
-	
+
 	uint32_t ncid;
     if (!remoteEnsureConnected(ncid)) { return; }
-	
+
     // Parse URL string for the command desired.
     QStringList list = link.path().split("/", QString::SkipEmptyParts);
-    
+
     // Process command.
     if (list.size() < 1) { return; }
-    
+
     if (list[0] == "start") {
         // Start an app here, which should be listed in the second slot.
         if (list.size() < 2) { return; }
-        
+
         // Try to load the index page for the specified app.
 		std::string appId = list[1].toStdString();
 		std::string resource = "index.html";
-        QString page = QString::fromStdString(client.loadResource(remotes[ncid].handle, 
-                                                                  appId, 
+        QString page = QString::fromStdString(client.loadResource(remotes[ncid].handle,
+                                                                  appId,
                                                                    resource));
-        
-        if (page.isEmpty()) { 
+
+        if (page.isEmpty()) {
             QMessageBox::warning(this, tr("Failed to start"), tr("The selected app could not be started."));
-            return; 
+            return;
         }
-        
+
         // Set the received HTML into the target widget.
         ui->appTabGuiTextBrowser->setHtml(page);
     }
@@ -1337,37 +1337,37 @@ void MainWindow::anchorClicked(const QUrl &link) {
 			if (list.size() < 3) { return; }
 			QString txt = QInputDialog::getText(this, tr("Input text"), tr("Text input requested by app."));
 			appStr = list[1].toStdString();
-			
+
 			// Merge index 2 until the end into a single space-separated string.
 			for (int i = 2; i < list.size(); i++) {
 				cmdStr += list[i].toStdString() + " ";
 			}
-			
+
 			cmdStr += txt.toStdString();
 		}
 		else {
 			// Assume the first entry contains an app name, followed by commands.
 			appStr = list[0].toStdString();
-			
+
 			// TODO: merge commands until the end into a single space-separated string.
 			for (int i = 1; i < list.size(); i++) {
 				cmdStr += list[i].toStdString() + " ";
 			}
-			
+
 			cmdStr.pop_back(); // Remove last space character.
 		}
-		
+
 		// TODO: validate app names here.
 		// Request the return of HTML with last parameter.
-		std::string response = client.sendApplicationMessage(remotes[ncid].handle, 
-																appStr, 
+		std::string response = client.sendApplicationMessage(remotes[ncid].handle,
+																appStr,
 																cmdStr, 1);
-																
+
 		if (response.size() < 20) {
 			// No full page received, retain last content.
 			return;
 		}
-																
+
 		// Response contains the new HTML to display. Load this into the view.
 		ui->appTabGuiTextBrowser->setHtml(QString::fromStdString(response));
     }
@@ -1378,19 +1378,19 @@ void MainWindow::anchorClicked(const QUrl &link) {
 QByteArray MainWindow::loadResource(const QUrl &name) {
 	uint32_t ncid;
     if (!remoteEnsureConnected(ncid)) { return QByteArray(); }
-	
+
     // Parse the URL for the desired resource.
     QFileInfo dir(name.path());
     QString qAppId = dir.path();
     std::string filename = name.fileName().toStdString();
-    
+
     // FIXME: Hack to deal with weird QLiteHtml behaviour with relative URLs.
     if (qAppId.startsWith("/")) {
         qAppId.remove(0, 1);
     }
-    
+
     std::string appId = qAppId.toStdString();
-    
+
     QByteArray page = QByteArray::fromStdString(client.loadResource(remotes[ncid].handle, appId, filename));
     return page;
 }
@@ -1404,7 +1404,7 @@ void MainWindow::scanForShares() {
         QMessageBox::warning(this, tr("No media servers found."), tr("No media servers found."));
         return;
     }
-    
+
     // For each media server, request the shared file list.
     sharesModel.clear();
     mediaFiles.clear();
@@ -1412,10 +1412,10 @@ void MainWindow::scanForShares() {
     for (uint32_t i = 0; i < mediaservers.size(); ++i) {
         std::vector<NymphMediaFile> files = client.getShares(mediaservers[i]);
         if (files.empty()) { continue; }
-        
+
         // Insert into model. Use the media server's host name as top folder, with the shared
         // files inserted underneath it in their respective media type categories.
-		// TODO: Use the provided media item categories within the UI. 
+		// TODO: Use the provided media item categories within the UI.
         QStandardItem* item = new QStandardItem(QString::fromStdString(mediaservers[i].name));
         item->setSelectable(false);
 		QStandardItem* audioRoot = new QStandardItem("audio");
@@ -1434,20 +1434,20 @@ void MainWindow::scanForShares() {
             ids.append(QVariant(files[j].id));
             mediaFiles.push_back(files);
             ids.append(QVariant((uint32_t) mediaFiles.size()));
-            
+
             fn->setData(QVariant(ids), Qt::UserRole);
             //item->appendRow(fn);
 			if 		(files[j].type == FILE_TYPE_AUDIO) 		{ audioRoot->appendRow(fn); }
 			else if (files[j].type == FILE_TYPE_VIDEO) 		{ videoRoot->appendRow(fn); }
 			else if (files[j].type == FILE_TYPE_PLAYLIST) 	{ playlistRoot->appendRow(fn); }
         }
-        
+
 		item->appendRow(audioRoot);
 		item->appendRow(videoRoot);
 		//item->appendRow(imageRoot);
 		item->appendRow(playlistRoot);
 		parentItem->appendRow(item);
-		
+
 		// Expand each root item.
 		ui->sharesTreeView->setExpanded(sharesModel.indexFromItem(item), true);
     }
@@ -1456,11 +1456,11 @@ void MainWindow::scanForShares() {
 
 // --- PLAY SELECTED SHARE --
 void MainWindow::playSelectedShare() {
-	// Make sure we are connected to the remote on which the NCMS will be playing on, to ensure 
+	// Make sure we are connected to the remote on which the NCMS will be playing on, to ensure
 	// that we get all the status updates from this remote.
 	uint32_t handle;
     if (!remoteEnsureConnected(handle)) { return; }
-    
+
     // Get the currently selected file name and obtain the ID.
     QModelIndexList indexes = ui->sharesTreeView->selectionModel()->selectedIndexes();
     if (indexes.size() == 0) {
@@ -1471,12 +1471,12 @@ void MainWindow::playSelectedShare() {
         QMessageBox::warning(this, tr("Too many files selected."), tr("Select single file."));
         return;
     }
-    
+
     QMap<int, QVariant> data = sharesModel.itemData(indexes[0]);
     QList<QVariant> ids = data[Qt::UserRole].toList();
-	
+
 	int index = ui->remotesComboBox->currentIndex();
-	
+
     std::vector<NymphCastRemote> receivers;
 	if (index > separatorIndex) {
 		// Get the group and set up the master & any slave receivers.
@@ -1486,7 +1486,7 @@ void MainWindow::playSelectedShare() {
 			QMessageBox::warning(this, tr("No remotes"), tr("Group contains no remotes."));
 			return;
 		}
-			
+
 		// Add the receivers.
 		for (uint32_t i = 0; i < (uint32_t) group.remotes.size(); ++i) {
 			receivers.push_back(group.remotes[i].remote);
@@ -1500,7 +1500,7 @@ void MainWindow::playSelectedShare() {
 		// Separator was selected?!
 		return;
 	}
-    
+
     // Play file via media server.
     if (!client.playShare(mediaFiles[ids[0].toInt()][ids[1].toInt()], receivers)) {
          //
@@ -1514,18 +1514,18 @@ void MainWindow::openRemotesDialog() {
 	connect(rd, SIGNAL(updateRemotesList()), this, SLOT(updateRemotesList()));
 	connect(rd, SIGNAL(saveGroupsList(std::vector<NCRemoteGroup>&)),
 				this, SLOT(updateGroupsList(std::vector<NCRemoteGroup>&)));
-	
+
 	// Set data.
 	rd->setRemoteList(remotes);
 	rd->updateGroupsList(groups);
-	
+
 	std::cout << "Set data on RD dialogue." << std::endl;
-	
+
 	// Execute dialog.
 	rd->exec();
-	
+
 	std::cout << "Finished RD dialogue." << std::endl;
-	
+
 	delete rd;
 }
 
@@ -1541,11 +1541,11 @@ void MainWindow::updateRemotesList() {
 // --- UPDATE GROUPS LIST ---
 void MainWindow::updateGroupsList(std::vector<NCRemoteGroup> &groups) {
 	this->groups = groups;
-	
+
 	std::cout << "Called updateGroupsList." << std::endl;
-	
+
 	addGroupsToRemotes();
-	
+
 	// Save new groups to disk.
 	saveGroups();
 }
@@ -1554,16 +1554,16 @@ void MainWindow::updateGroupsList(std::vector<NCRemoteGroup> &groups) {
 // --- UPDATE REMOTES LIST ---
 void MainWindow::updateRemotesList(std::vector<NCRemoteInstance> &remotes) {
 	this->custom_remotes = remotes;
-	
+
 	std::cout << "Called updateRemotesList." << std::endl;
-	
+
 	// Refresh remotes list.
 	remoteListRefresh();
-	
+
 	// Save new groups to disk.
 	saveRemotes();
 }
-	
+
 
 // --- ADD GROUPS TO REMOTES ---
 void MainWindow::addGroupsToRemotes() {
@@ -1571,26 +1571,26 @@ void MainWindow::addGroupsToRemotes() {
 	ui->remotesComboBox->clear();
 	for (uint32_t i = 0; i < remotes.size(); ++i) {
 		QListWidgetItem *newItem = new QListWidgetItem;
-		newItem->setText(QString::fromStdString(remotes[i].remote.ipv4 + " (" + 
+		newItem->setText(QString::fromStdString(remotes[i].remote.ipv4 + " (" +
 													remotes[i].remote.name + ")"));
 		newItem->setData(Qt::UserRole, QVariant(i));
 		if (remotes[i].manual) { // Manually added remote.
-			ui->remotesComboBox->insertItem(i, QString::fromStdString(remotes[i].remote.ipv4 + 
+			ui->remotesComboBox->insertItem(i, QString::fromStdString(remotes[i].remote.ipv4 +
 										" (" + remotes[i].remote.name + ") [Manual]"), QVariant(i));
 		}
 		else {
-			ui->remotesComboBox->insertItem(i, QString::fromStdString(remotes[i].remote.ipv4 + 
+			ui->remotesComboBox->insertItem(i, QString::fromStdString(remotes[i].remote.ipv4 +
 												" (" + remotes[i].remote.name + ")"), QVariant(i));
 		}
 	}
-	
+
 	// Insert group separator for the relevant combo boxes.
 	ui->remotesComboBox->insertSeparator(remotes.size());
 	separatorIndex = remotes.size();
-	
+
 	// Add groups.
 	for (uint32_t i = 0; i < groups.size(); ++i) {
-		ui->remotesComboBox->addItem(QString::fromStdString(groups[i].name + 
+		ui->remotesComboBox->addItem(QString::fromStdString(groups[i].name +
 													" (group)"), QVariant(i));
 	}
 }
@@ -1599,7 +1599,7 @@ void MainWindow::addGroupsToRemotes() {
 // --- ABOUT ---
 void MainWindow::about() {
 	QString version = STR(__NCVERSION);
-	QMessageBox::about(this, tr("About NymphCast Player."), 
+	QMessageBox::about(this, tr("About NymphCast Player."),
 		"NymphCast Player is the reference player for NymphCast.\n\nRev.: " + version);
 }
 
@@ -1619,52 +1619,52 @@ void MainWindow::loadPlaylist() {
 	QString dir = settings.value("openPlaylistDir").toString();
 	QString filename = QFileDialog::getOpenFileName(this, tr("Open playlist"), dir, tr("Playlists (*.m3u *.m3u8)"));
 	if (filename.isEmpty()) { return; }
-	
+
 	// Update current folder.
 	settings.setValue("openPlaylistDir", filename);
-	
+
 	// Parse file. Discard Extended M3U (#-prefixed) lines for now.
 	QFile playlist;
 	playlist.setFileName(filename);
-	if (!playlist.exists()) { 
+	if (!playlist.exists()) {
 		QMessageBox::warning(this, tr("Failed to open file"), tr("The selected file could not be opened."));
 		return;
 	}
-	
+
 	playlist.open(QIODevice::ReadOnly);
 	QTextStream textStream(&playlist);
 	textStream.setCodec("UTF-8");
 	ui->mediaListWidget->clear();
-	
+
 	// Overwrite local playlist with the new playlist too.
 	QFile filepaths;
 	filepaths.setFileName(appDataLocation + "/filepaths.conf");
 	filepaths.open(QIODevice::WriteOnly | QIODevice::Truncate);
 	QTextStream outStream(&filepaths);
 	outStream.setCodec("UTF-8");
-	
+
 	QString line;
 	bool clean = true;
 	while (!(line = textStream.readLine()).isNull()) {
 		if (line.startsWith("#")) { continue; }
-		
+
 		// We should have a file path now.
 		QFileInfo finf(line);
 		if (!finf.isFile()) { clean = false; continue; }
-		
+
 		QListWidgetItem *newItem = new QListWidgetItem;
 		newItem->setText(finf.fileName());
 		newItem->setData(Qt::UserRole, QVariant(line));
 		ui->mediaListWidget->addItem(newItem);
-		
+
 		outStream << line << "\n";
 	}
-	
+
 	if (!clean) {
-		QMessageBox::warning(this, tr("Playlist issue"), 
+		QMessageBox::warning(this, tr("Playlist issue"),
 			tr("There was an issue with some of the playlist entries"));
 	}
-	
+
 	playlist.close();
 	filepaths.close();
 }
@@ -1678,24 +1678,24 @@ void MainWindow::savePlaylist() {
 	QString dir = settings.value("savePlaylistDir").toString();
 	QString filename = QFileDialog::getSaveFileName(this, tr("Save playlist"), dir, tr("Playlists (*.m3u"));
 	if (filename.isEmpty()) { return; }
-	
+
 	// Update current folder.
 	settings.setValue("savePlaylistDir", filename);
-	
+
 	// Open file.
 	QFile playlist;
 	playlist.setFileName(filename);
 	playlist.open(QIODevice::WriteOnly);
 	QTextStream textStream(&playlist);
 	textStream.setCodec("UTF-8");
-	
+
 	// Write paths to file.
 	int itemCount = ui->mediaListWidget->count();
 	for (int i = 0; i < itemCount; i++) {
 		QListWidgetItem* item = ui->mediaListWidget->item(i);
 		textStream << item->data(Qt::UserRole).toString() << "\n";
 	}
-	
+
 	playlist.close();
 }
 
@@ -1704,7 +1704,7 @@ void MainWindow::savePlaylist() {
 // Clears the current displayed playlist.
 void MainWindow::clearPlaylist() {
 	ui->mediaListWidget->clear();
-	
+
 	// Clear local list too.
 	QFile filepaths;
 	filepaths.setFileName(appDataLocation + "/filepaths.conf");
@@ -1719,17 +1719,17 @@ void MainWindow::openCustomRemotesDialog() {
 	crd = new CustomRemotesDialog;
 	connect(crd, SIGNAL(saveRemotesList(std::vector<NCRemoteInstance>&)),
 				this, SLOT(updateRemotesList(std::vector<NCRemoteInstance>&)));
-	
+
 	// Set data.
 	crd->setRemoteList(custom_remotes);
-	
+
 	std::cout << "Set data on CRD dialogue." << std::endl;
-	
+
 	// Execute dialog.
 	crd->exec();
-	
+
 	std::cout << "Finished CRD dialogue." << std::endl;
-	
+
 	delete crd;
 }
 
@@ -1744,7 +1744,7 @@ bool MainWindow::loadGroups() {
 		QMessageBox::warning(this, tr("Error loading groups"), tr("Error reading the groups.bin file!"));
 		return false;
 	}
-	
+
 	// Read in the groups.
 	QDataStream ds(&file);
 	// First read in the number of groups.
@@ -1756,36 +1756,36 @@ bool MainWindow::loadGroups() {
 		quint32 numRemotes;
 		ds >> gname;
 		ds >> numRemotes;
-		
+
 		NCRemoteGroup rg;
 		rg.name = gname.toStdString();
-		
+
 		for (uint32_t j = 0; j < numRemotes; ++j) {
 			QString rname;
 			QString ipv4;
 			QString ipv6;
 			quint16 port;
-			
+
 			ds >> rname;
 			ds >> ipv4;
 			ds >> ipv6;
 			ds >> port;
-			
+
 			NymphCastRemote ncr;
 			ncr.name = rname.toStdString();
 			ncr.ipv4 = ipv4.toStdString();
 			ncr.ipv6 = ipv6.toStdString();
 			ncr.port = (uint16_t) port;
-			
+
 			NCRemoteInstance nci;
 			nci.remote = ncr;
-			
+
 			rg.remotes.push_back(nci);
 		}
-		
+
 		groups.push_back(rg);
 	}
-	
+
 	return true;
 }
 
@@ -1794,14 +1794,14 @@ bool MainWindow::loadGroups() {
 // Save the remote groups to file.
 bool MainWindow::saveGroups() {
 	std::cout << "SaveGroups called." << std::endl;
-	
+
 	// Open the groups file.
 	QFile file(appDataLocation + "/groups.bin");
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
 		QMessageBox::warning(this, tr("Error saving groups"), tr("Error opening the groups.bin file!"));
 		return false;
 	}
-	
+
 	// Write the groups.
 	QDataStream ds(&file);
 	ds << (quint32) groups.size(); // Number of groups.
@@ -1816,7 +1816,7 @@ bool MainWindow::saveGroups() {
 			ds << (quint16) groups[i].remotes[j].remote.port;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -1831,41 +1831,41 @@ bool MainWindow::loadRemotes() {
 		QMessageBox::warning(this, tr("Error loading remotes"), tr("Error reading the remotes.bin file!"));
 		return false;
 	}
-	
+
 	// Read in the remotes.
 	QDataStream ds(&file);
-	
+
 	// First read in the number of remotes.
 	quint32 numRemotes;
 	ds >> numRemotes;
-	
+
 	// Clear any existing remotes.
 	custom_remotes.clear();
-	
+
 	// Read the remotes.
 	for (uint32_t j = 0; j < numRemotes; ++j) {
 		QString rname;
 		QString ipv4;
 		QString ipv6;
 		quint16 port;
-		
+
 		ds >> rname;
 		ds >> ipv4;
 		ds >> ipv6;
 		ds >> port;
-		
+
 		NymphCastRemote ncr;
 		ncr.name = rname.toStdString();
 		ncr.ipv4 = ipv4.toStdString();
 		ncr.ipv6 = ipv6.toStdString();
 		ncr.port = (uint16_t) port;
-		
+
 		NCRemoteInstance nci;
 		nci.remote = ncr;
-		
+
 		custom_remotes.push_back(nci);
 	}
-	
+
 	return true;
 }
 
@@ -1879,7 +1879,7 @@ bool MainWindow::saveRemotes() {
 		QMessageBox::warning(this, tr("Error saving remotes"), tr("Error opening the remotes.bin file!"));
 		return false;
 	}
-	
+
 	// Write the remotes.
 	QDataStream ds(&file);
 	ds << (quint32) custom_remotes.size();
@@ -1889,6 +1889,8 @@ bool MainWindow::saveRemotes() {
 		ds << QString::fromStdString(custom_remotes[j].remote.ipv6);
 		ds << (quint16) custom_remotes[j].remote.port;
 	}
-	
+
 	return true;
 }
+
+#include "mainwindow.moc"
